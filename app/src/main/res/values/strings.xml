@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">2048</string>
+    <string name="layout">Layout</string>
+    <string name="layout4">4 × 4</string>
+    <string name="layout5">5 × 5</string>
+    <string name="layout6">6 × 6</string>
+    <string name="new_game">New Game</string>
+    <string name="score">SCORE</string>
+    <string name="best">BEST</string>
+    <string name="you_win">YOU WIN!</string>
+    <string name="game_over">GAME OVER!</string>
+    <string name="about">About</string>
+    <string name="copyright">© Programmer-Yang_Xun@outlook.com\nWelcome to visit https://GitHub.com/Hydr10n</string>
+    <string name="confirm">OK</string>
+</resources>
