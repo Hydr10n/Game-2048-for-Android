@@ -1,6 +1,6 @@
 /*
  * Project: Game 2048
- * Last Modified: 6/21/20 9:28 PM
+ * Last Modified: 6/22/20 11:13 PM
  *
  * Copyright (C) 2020 Programmer-Yang_Xun@outlook.com. All Rights Reserved.
  * Welcome to visit https://GitHub.com/Hydr10n
@@ -8,7 +8,6 @@
 
 package com.hydr10n.game2048;
 
-import android.content.pm.PackageInfo;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.SpannableString;
@@ -102,15 +101,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.about) {
-            String version = "Current Version: ";
-            try {
-                final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
-                version += pInfo.versionName;
-            } catch (Exception e) {
-            }
-            final TextView textView = new TextView(this);
-            final SpannableString spannableString = new SpannableString(version + '\n' + getString(R.string.copyright));
+            final SpannableString spannableString = new SpannableString("Current Version: " + BuildConfig.VERSION_NAME + '\n' + getString(R.string.copyright));
             Linkify.addLinks(spannableString, Linkify.WEB_URLS);
+            final TextView textView = new TextView(this);
             textView.setText(spannableString);
             textView.setPadding(0, 10, 0, 0);
             textView.setGravity(Gravity.CENTER);
@@ -301,11 +294,11 @@ public class MainActivity extends AppCompatActivity {
             for (int a = 0; a < tilesCountPerSide; a++) {
                 final Cell cell1 = rotateCell(row, a, angle);
                 if (tiles[cell1.row][cell1.column] != null) {
-                    boolean findSecond = true, merged = true;
+                    boolean foundSecond = false, merged = true;
                     for (int b = a + 1; b < tilesCountPerSide; b++) {
                         final Cell cell2 = rotateCell(row, b, angle);
                         if (tiles[cell2.row][cell2.column] != null) {
-                            findSecond = false;
+                            foundSecond = true;
                             int tileValue = tiles[cell1.row][cell1.column].getValue();
                             if (tileValue == tiles[cell2.row][cell2.column].getValue()) {
                                 tileValue += tileValue;
@@ -332,7 +325,7 @@ public class MainActivity extends AppCompatActivity {
                             break;
                         }
                     }
-                    if (findSecond && a > 0) {
+                    if (!foundSecond && a > 0) {
                         if (!merged)
                             next++;
                         if (a != next) {
