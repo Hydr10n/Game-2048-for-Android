@@ -2,7 +2,7 @@
 
 <!--
   ~ Project: Game 2048
-  ~ Last Modified: 6/22/20 11:13 PM
+  ~ Last Modified: 6/26/20 2:42 PM
   ~
   ~ Copyright (C) 2020 Programmer-Yang_Xun@outlook.com. All Rights Reserved.
   ~ Welcome to visit https://GitHub.com/Hydr10n
@@ -30,12 +30,14 @@
         android:layout_height="match_parent"
         tools:context=".MainActivity">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:id="@+id/constraintLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="@dimen/default_margin"
             android:layout_marginTop="50dp"
+            android:orientation="horizontal"
+            android:gravity="center"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -92,6 +94,7 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
                 android:layout_marginEnd="10dp"
                 android:background="@drawable/rounded_corner_newgame"
                 android:enabled="@{viewModel.layoutReady}"
@@ -103,7 +106,7 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/constraintLayout2"

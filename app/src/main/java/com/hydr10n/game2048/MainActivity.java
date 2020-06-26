@@ -1,6 +1,6 @@
 /*
  * Project: Game 2048
- * Last Modified: 6/22/20 11:13 PM
+ * Last Modified: 6/26/20 2:42 PM
  *
  * Copyright (C) 2020 Programmer-Yang_Xun@outlook.com. All Rights Reserved.
  * Welcome to visit https://GitHub.com/Hydr10n
@@ -73,21 +73,25 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSwipeLeft() {
                 moveTiles(Direction.Left);
+                saveGameProgress();
             }
 
             @Override
             public void onSwipeUp() {
                 moveTiles(Direction.Up);
+                saveGameProgress();
             }
 
             @Override
             public void onSwipeRight() {
                 moveTiles(Direction.Right);
+                saveGameProgress();
             }
 
             @Override
             public void onSwipeDown() {
                 moveTiles(Direction.Down);
+                saveGameProgress();
             }
         });
     }
@@ -157,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void newGameButton_onClick(View view) {
+        saveGameProgress();
         startNewGame();
     }
 
@@ -252,10 +257,10 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    private void saveGameProgress(boolean reset) {
+    private void saveGameProgress() {
         int score = 0;
         int[][] tilesValues = null;
-        if (!reset) {
+        if (viewModel.getGameState() == GameState.Started) {
             score = viewModel.getScore();
             tilesValues = new int[tilesCountPerSide][tilesCountPerSide];
             for (int i = 0; i < tilesCountPerSide; i++)
@@ -264,6 +269,7 @@ public class MainActivity extends AppCompatActivity {
                         tilesValues[i][j] = tiles[i][j].getValue();
         }
         gameSave.saveData(GAME_SAVE_KEYS[gameSaveKeyIndex][GAME_SAVE_KEY_SCORE_INDEX], score);
+        gameSave.saveData(GAME_SAVE_KEYS[gameSaveKeyIndex][GAME_SAVE_KEY_BEST_SCORE_INDEX], Math.max(score, viewModel.getBestScore()));
         gameSave.saveData(GAME_SAVE_KEYS[gameSaveKeyIndex][GAME_SAVE_KEY_TILES_VALUES_INDEX], tilesValues);
     }
 
@@ -349,17 +355,12 @@ public class MainActivity extends AppCompatActivity {
             return;
         if (won) {
             viewModel.setGameState(GameState.Won);
-            saveGameProgress(true);
             return;
         }
         if (count < tilesCountPerSide)
             addRandomTile();
-        if (count >= tilesCountPerSide - 1 && isGameOver()) {
+        if (count >= tilesCountPerSide - 1 && isGameOver())
             viewModel.setGameState(GameState.Over);
-            saveGameProgress(true);
-            return;
-        }
-        saveGameProgress(false);
     }
 
     private boolean initializeGameLayout() {
@@ -384,6 +385,5 @@ public class MainActivity extends AppCompatActivity {
         addRandomTile();
         viewModel.setScore(0);
         viewModel.setGameState(GameState.Started);
-        saveGameProgress(true);
     }
 }
