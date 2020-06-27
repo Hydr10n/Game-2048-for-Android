@@ -1,6 +1,6 @@
 /*
  * Project: Game 2048
- * Last Modified: 6/26/20 2:42 PM
+ * Last Modified: 6/27/20 1:18 PM
  *
  * Copyright (C) 2020 Programmer-Yang_Xun@outlook.com. All Rights Reserved.
  * Welcome to visit https://GitHub.com/Hydr10n
@@ -8,7 +8,6 @@
 
 package com.hydr10n.game2048;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
@@ -31,27 +30,12 @@ import java.util.Random;
 public class MainActivity extends AppCompatActivity {
     private enum Direction {Left, Up, Right, Down}
 
-    private static final int TILE_FOREGROUND_INDEX = 0, TILE_BACKGROUND_INDEX = 1;
-    private static final int GAME_SAVE_KEY_SCORE_INDEX = 0, GAME_SAVE_KEY_BEST_SCORE_INDEX = 1, GAME_SAVE_KEY_TILES_VALUES_INDEX = 2;
+    private static final int GAME_SAVE_KEY_SCORE_INDEX = 0, GAME_SAVE_KEY_BEST_SCORE_INDEX = 1, GAME_SAVE_KEY_TILES_NumberS_INDEX = 2;
     private static final float PADDING_SCALE = 0.06f, TILE_SCALE = 1 - 2 * PADDING_SCALE;
     private static final String[][] GAME_SAVE_KEYS = {
-            {"Layout4Score", "Layout4BestScore", "Layout4TilesValues"},
-            {"Layout5Score", "Layout5BestScore", "Layout5TilesValues"},
-            {"Layout6Score", "Layout6BestScore", "Layout6TilesValues"}
-    };
-    private static final int[][] TILE_COLORS = {    // [0]: text color; [1]: background color
-            {0, Color.parseColor("#cdc1b4")},                                        // empty
-            {Color.parseColor("#776e65"), Color.parseColor("#eee4da")},    // 2
-            {Color.parseColor("#776e65"), Color.parseColor("#ede0c8")},    // 4
-            {Color.parseColor("#f9f6f2"), Color.parseColor("#f2b179")},    // 8
-            {Color.parseColor("#f9f6f2"), Color.parseColor("#f59563")},    // 16
-            {Color.parseColor("#f9f6f2"), Color.parseColor("#f67c5f")},    // 32
-            {Color.parseColor("#f9f6f2"), Color.parseColor("#f65e3b")},    // 64
-            {Color.parseColor("#f9f6f2"), Color.parseColor("#edcf72")},    // 128
-            {Color.parseColor("#f9f6f2"), Color.parseColor("#edcc61")},    // 256
-            {Color.parseColor("#f9f6f2"), Color.parseColor("#edc850")},    // 512
-            {Color.parseColor("#f9f6f2"), Color.parseColor("#edc53f")},    // 1024
-            {Color.parseColor("#f9f6f2"), Color.parseColor("#edc22e")}     // 2048
+            {"Layout4Score", "Layout4BestScore", "Layout4TilesNumbers"},
+            {"Layout5Score", "Layout5BestScore", "Layout5TilesNumbers"},
+            {"Layout6Score", "Layout6BestScore", "Layout6TilesNumbers"}
     };
 
     private int tilesCountPerSide, maxTextSize, gameSaveKeyIndex;
@@ -148,7 +132,6 @@ public class MainActivity extends AppCompatActivity {
         if (tilesCountPerSide == count)
             return;
         tilesCountPerSide = count;
-        viewModel.setGameState(GameState.NotStarted);
         gameLayout.removeAllViews();
         final int gameLayoutSideLength = Math.min(gameLayout.getWidth(), gameLayout.getHeight());
         tileFullSideLength = gameLayoutSideLength / (tilesCountPerSide + PADDING_SCALE * 2);
@@ -158,33 +141,18 @@ public class MainActivity extends AppCompatActivity {
         viewModel.setBestScore(gameSave.loadIntData(GAME_SAVE_KEYS[gameSaveKeyIndex][GAME_SAVE_KEY_BEST_SCORE_INDEX]));
         if (initializeGameLayout())
             viewModel.setGameState(GameState.Started);
+        viewModel.setLayoutReady(true);
     }
 
     public void newGameButton_onClick(View view) {
+        viewModel.setGameState(GameState.NotStarted);
         saveGameProgress();
         startNewGame();
     }
 
-    private int getTileColorIndex(int tileValue) {
-        if (tileValue == 0)
-            return 0;
-        final int index = (int) (Math.log(tileValue) / Math.log(2));
-        if (index >= TILE_COLORS.length)
-            return 0;
-        return index;
-    }
-
-    private Tile addTile(int row, int column, int tileValue) {
-        final int tileColorIndex = getTileColorIndex(tileValue);
-        final Tile tile = new Tile(gameLayout, tileFullSideLength, TILE_SCALE);
-        tile.setCell(row, column);
-        tile.setBackgroundColor(TILE_COLORS[tileColorIndex][TILE_BACKGROUND_INDEX]);
-        if (tileValue > 0) {
-            tile.setTextColor(TILE_COLORS[tileColorIndex][TILE_FOREGROUND_INDEX]);
-            tile.setMaxTextSize(maxTextSize);
-            tile.setValue(tileValue);
-            tile.scaleFromSmallToNormal();
-        }
+    private Tile addTile(int row, int column, int tileNumber) {
+        final Tile tile = new Tile(gameLayout, row, column, tileNumber, tileFullSideLength, TILE_SCALE, maxTextSize);
+        tile.updateAppearance();
         return tile;
     }
 
@@ -214,15 +182,11 @@ public class MainActivity extends AppCompatActivity {
         tiles[toCell.row][toCell.column] = tile;
     }
 
-    private void mergeTiles(Cell fromCell1, Cell fromCell2, Cell toCell, int tileValue) {
+    private void mergeTiles(Cell fromCell1, Cell fromCell2, Cell toCell) {
         final Tile fromTile1 = tiles[fromCell1.row][fromCell1.column], fromTile2 = tiles[fromCell2.row][fromCell2.column];
         moveTile(fromCell1, toCell);
         moveTile(fromCell2, toCell);
-        final int tileColorIndex = getTileColorIndex(tileValue);
-        fromTile2.setBackgroundColor(TILE_COLORS[tileColorIndex][TILE_BACKGROUND_INDEX]);
-        fromTile2.setTextColor(TILE_COLORS[tileColorIndex][TILE_FOREGROUND_INDEX]);
-        fromTile2.setValueAndScale(tileValue);
-        fromTile1.removeSelf();
+        fromTile2.mergeTo(fromTile1);
     }
 
     private Cell rotateCell(int row, int column, int angle) {
@@ -245,32 +209,42 @@ public class MainActivity extends AppCompatActivity {
                     return false;
                 for (int b = a + 1; b < tilesCountPerSide; b++)
                     if (tiles[row][b] != null) {
-                        if (tiles[row][a].getValue() == tiles[row][b].getValue())
+                        if (tiles[row][a].getNumber() == tiles[row][b].getNumber())
                             return false;
                         break;
                     }
             }
         for (int column = 0; column < tilesCountPerSide; column++)
             for (int a = 0; a < tilesCountPerSide - 1; a++)
-                if (tiles[a][column].getValue() == tiles[a + 1][column].getValue())
+                if (tiles[a][column].getNumber() == tiles[a + 1][column].getNumber())
                     return false;
         return true;
     }
 
     private void saveGameProgress() {
         int score = 0;
-        int[][] tilesValues = null;
+        int[][] tilesNumbers = null;
         if (viewModel.getGameState() == GameState.Started) {
             score = viewModel.getScore();
-            tilesValues = new int[tilesCountPerSide][tilesCountPerSide];
+            tilesNumbers = new int[tilesCountPerSide][tilesCountPerSide];
             for (int i = 0; i < tilesCountPerSide; i++)
                 for (int j = 0; j < tilesCountPerSide; j++)
                     if (tiles[i][j] != null)
-                        tilesValues[i][j] = tiles[i][j].getValue();
+                        tilesNumbers[i][j] = tiles[i][j].getNumber();
         }
         gameSave.saveData(GAME_SAVE_KEYS[gameSaveKeyIndex][GAME_SAVE_KEY_SCORE_INDEX], score);
         gameSave.saveData(GAME_SAVE_KEYS[gameSaveKeyIndex][GAME_SAVE_KEY_BEST_SCORE_INDEX], Math.max(score, viewModel.getBestScore()));
-        gameSave.saveData(GAME_SAVE_KEYS[gameSaveKeyIndex][GAME_SAVE_KEY_TILES_VALUES_INDEX], tilesValues);
+        gameSave.saveData(GAME_SAVE_KEYS[gameSaveKeyIndex][GAME_SAVE_KEY_TILES_NumberS_INDEX], tilesNumbers);
+    }
+
+    private boolean loadGameProgress() {
+        final int[][] tilesNumbers = gameSave.loadInt2DData(GAME_SAVE_KEYS[gameSaveKeyIndex][GAME_SAVE_KEY_TILES_NumberS_INDEX]);
+        if (tilesNumbers != null)
+            for (int i = 0; i < tilesCountPerSide; i++)
+                for (int j = 0; j < tilesCountPerSide; j++)
+                    if (tilesNumbers[i][j] != 0)
+                        tiles[i][j] = addTile(i, j, tilesNumbers[i][j]);
+        return tilesNumbers != null;
     }
 
     private void moveTiles(Direction direction) {
@@ -305,15 +279,14 @@ public class MainActivity extends AppCompatActivity {
                         final Cell cell2 = rotateCell(row, b, angle);
                         if (tiles[cell2.row][cell2.column] != null) {
                             foundSecond = true;
-                            int tileValue = tiles[cell1.row][cell1.column].getValue();
-                            if (tileValue == tiles[cell2.row][cell2.column].getValue()) {
-                                tileValue += tileValue;
-                                final Cell cellNext = rotateCell(row, next, angle);
-                                mergeTiles(cell1, cell2, cellNext, tileValue);
+                            int tileNumber = tiles[cell1.row][cell1.column].getNumber();
+                            if (tileNumber == tiles[cell2.row][cell2.column].getNumber()) {
+                                mergeTiles(cell1, cell2, rotateCell(row, next, angle));
                                 moved = true;
                                 a = b;
-                                viewModel.setScore(tileValue + viewModel.getScore());
-                                if (tileValue >= 2048)
+                                tileNumber <<= 1;
+                                viewModel.setScore(tileNumber + viewModel.getScore());
+                                if (tileNumber >= 2048)
                                     won = true;
                             } else {
                                 if (a != next) {
@@ -347,10 +320,8 @@ public class MainActivity extends AppCompatActivity {
                 count++;
         }
         final int score = viewModel.getScore();
-        if (score > viewModel.getBestScore()) {
+        if (score > viewModel.getBestScore())
             viewModel.setBestScore(score);
-            gameSave.saveData(GAME_SAVE_KEYS[gameSaveKeyIndex][GAME_SAVE_KEY_BEST_SCORE_INDEX], score);
-        }
         if (!moved)
             return;
         if (won) {
@@ -364,19 +335,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean initializeGameLayout() {
-        // WARNING: THE FOLLOWING 2 LOOPS MUST BE SEPARATED BECAUSE OF Z-ORDER
         for (int i = 0; i < tilesCountPerSide; i++)
             for (int j = 0; j < tilesCountPerSide; j++)
                 addTile(i, j, 0);
         tiles = new Tile[tilesCountPerSide][tilesCountPerSide];
-        final int[][] tilesValues = gameSave.loadInt2DData(GAME_SAVE_KEYS[gameSaveKeyIndex][GAME_SAVE_KEY_TILES_VALUES_INDEX]);
-        if (tilesValues != null)
-            for (int i = 0; i < tilesCountPerSide; i++)
-                for (int j = 0; j < tilesCountPerSide; j++)
-                    if (tilesValues[i][j] != 0)
-                        tiles[i][j] = addTile(i, j, tilesValues[i][j]);
-        viewModel.setLayoutReady(true);
-        return tilesValues != null;
+        return loadGameProgress();
     }
 
     private void startNewGame() {
