@@ -1,6 +1,6 @@
 /*
  * Project: Game 2048
- * Last Modified: 6/27/20 1:18 PM
+ * Last Modified: 7/1/20 10:15 PM
  *
  * Copyright (C) 2020 Programmer-Yang_Xun@outlook.com. All Rights Reserved.
  * Welcome to visit https://GitHub.com/Hydr10n
@@ -38,9 +38,10 @@ public class MainActivity extends AppCompatActivity {
             {"Layout6Score", "Layout6BestScore", "Layout6TilesNumbers"}
     };
 
+    private final ViewModel viewModel = new ViewModel();
+
     private int tilesCountPerSide, maxTextSize, gameSaveKeyIndex;
     private float tileFullSideLength;
-    private ViewModel viewModel;
     private GameSave gameSave;
     private RelativeLayout gameLayout;
     private Tile[][] tiles;
@@ -49,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ActivityMainBinding activityMainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-        viewModel = new ViewModel();
         activityMainBinding.setViewModel(viewModel);
         gameSave = new GameSave(this, "data");
         gameLayout = findViewById(R.id.layout_game);
@@ -132,6 +132,7 @@ public class MainActivity extends AppCompatActivity {
         if (tilesCountPerSide == count)
             return;
         tilesCountPerSide = count;
+        viewModel.setGameState(GameState.NotStarted);
         gameLayout.removeAllViews();
         final int gameLayoutSideLength = Math.min(gameLayout.getWidth(), gameLayout.getHeight());
         tileFullSideLength = gameLayoutSideLength / (tilesCountPerSide + PADDING_SCALE * 2);
@@ -183,10 +184,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void mergeTiles(Cell fromCell1, Cell fromCell2, Cell toCell) {
-        final Tile fromTile1 = tiles[fromCell1.row][fromCell1.column], fromTile2 = tiles[fromCell2.row][fromCell2.column];
-        moveTile(fromCell1, toCell);
-        moveTile(fromCell2, toCell);
-        fromTile2.mergeTo(fromTile1);
+        final Tile fromTile2 = tiles[fromCell2.row][fromCell2.column];
+        fromTile2.mergeTo(tiles[fromCell1.row][fromCell1.column], toCell);
+        tiles[fromCell1.row][fromCell1.column] = null;
+        tiles[fromCell2.row][fromCell2.column] = null;
+        tiles[toCell.row][toCell.column] = fromTile2;
     }
 
     private Cell rotateCell(int row, int column, int angle) {
@@ -203,21 +205,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isGameOver() {
-        for (int row = 0; row < tilesCountPerSide; row++)
-            for (int a = 0; a < tilesCountPerSide; a++) {
-                if (tiles[row][a] == null)
+        final int[][] directions = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}};
+        for (int i = 0; i < tilesCountPerSide; i++)
+            for (int j = 0; j < tilesCountPerSide; j++) {
+                if (tiles[i][j] == null)
                     return false;
-                for (int b = a + 1; b < tilesCountPerSide; b++)
-                    if (tiles[row][b] != null) {
-                        if (tiles[row][a].getNumber() == tiles[row][b].getNumber())
-                            return false;
-                        break;
-                    }
+                for (int[] direction : directions) {
+                    final int newI = i + direction[0], newJ = j + direction[1];
+                    if (newI >= 0 && newI < tilesCountPerSide && newJ >= 0 && newJ < tilesCountPerSide &&
+                            (tiles[newI][newJ] == null || tiles[i][j].getNumber() == tiles[newI][newJ].getNumber()))
+                        return false;
+                }
             }
-        for (int column = 0; column < tilesCountPerSide; column++)
-            for (int a = 0; a < tilesCountPerSide - 1; a++)
-                if (tiles[a][column].getNumber() == tiles[a + 1][column].getNumber())
-                    return false;
         return true;
     }
 

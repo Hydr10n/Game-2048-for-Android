@@ -1,6 +1,6 @@
 /*
  * Project: Game 2048
- * Last Modified: 6/27/20 12:19 PM
+ * Last Modified: 7/1/20 10:13 PM
  *
  * Copyright (C) 2020 Programmer-Yang_Xun@outlook.com. All Rights Reserved.
  * Welcome to visit https://GitHub.com/Hydr10n
@@ -81,12 +81,12 @@ class Tile extends androidx.appcompat.widget.AppCompatTextView {
         setTextColor(TILE_COLORS[tileColorIndex][TILE_FOREGROUND_INDEX]);
     }
 
-    private int getTileColorIndex(int tileNumber) {
-        if (tileNumber == 0)
+    private int getTileColorIndex(int number) {
+        if (number == 0)
             return 0;
-        else if (tileNumber < 0)
+        else if (number < 0)
             throw new IllegalArgumentException();
-        final int index = (int) (Math.log(tileNumber) / Math.log(2));
+        final int index = (int) (Math.log(number) / Math.log(2));
         if (index >= TILE_COLORS.length)
             throw new IllegalArgumentException();
         return index;
@@ -121,10 +121,11 @@ class Tile extends androidx.appcompat.widget.AppCompatTextView {
         parent.updateViewLayout(this, layoutParams);
     }
 
-    public void mergeTo(Tile tile) {
+    public void mergeTo(Tile tile, Cell toCell) {
+        tile.removeSelf();
+        setCell(toCell.row, toCell.column);
         setNumber(getNumber() << 1);
         updateAppearance();
-        tile.removeSelf();
         playScaleAnimation(1, MAX_SCALE, 1, MAX_SCALE, ANIMATION_DURATION / 2, true);
     }
 
